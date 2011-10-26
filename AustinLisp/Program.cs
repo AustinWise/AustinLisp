@@ -10,25 +10,17 @@ namespace AustinLisp
     {
         static void Main()
         {
-            //const string Code = "(list \"asdf asdf as' ( \"  (++ 3 4) 1 2 'aa ver)";
-            const string Code = "(+ 2 3 (+ 2 2 4 56 7) )";
-            //var input = new StringReader(Code);
-            var input = Console.In;
-
-
             var top = new Environment();
             AddBuiltinFunctions(top);
             AddExtraFunctions(top);
 
             Console.Write("> ");
-            var scan = new Scanner(input);
+            var scan = new Scanner(Console.In);
             while (scan.Peek().Item1 != TokenType.EOF)
             {
                 try
                 {
-                    var val = Parse(scan);
-                    //Console.WriteLine(val);
-                    Console.WriteLine(val.Eval(top));
+                    Console.WriteLine(Parse(scan).Eval(top));
                 }
                 catch (Exception ex)
                 {
@@ -36,12 +28,6 @@ namespace AustinLisp
                 }
                 Console.Write("> ");
             }
-
-
-            //foreach (var tk in scan.GetTokens2().Take(15))
-            //{
-            //    Console.WriteLine("{0,10}: {1}", tk.Item1, tk.Item2);
-            //}
         }
 
         static Value Parse(Scanner scan)
