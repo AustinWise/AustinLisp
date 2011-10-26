@@ -156,6 +156,15 @@ namespace List
                 System.Environment.Exit(exitCode);
                 return List.Nil;
             }));
+            top.Add("eq", new BuiltinFunction((env, args) =>
+            {
+                var v1 = args.Val.Eval(env);
+                var v2 = args.Next.Val.Eval(env);
+                if (v1.Equals(v2))
+                    return True.T;
+                else
+                    return List.Nil;
+            }));
         }
     }
 }

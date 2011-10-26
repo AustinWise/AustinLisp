@@ -180,11 +180,13 @@ namespace List
             var other = obj as List;
             if (other == null)
                 return false;
-            if (!this.Val.Equals(other.Val))
-                return false;
 
+            //base case when we get to the end of both lists
             if (this == Nil && other == Nil)
                 return true;
+
+            if (!this.Val.Equals(other.Val))
+                return false;
             else
                 return this.Next.Equals(other.Next);
         }
@@ -295,7 +297,7 @@ namespace List
             var other = obj as UserFunction;
             if (other == null)
                 return false;
-            this.mFun.Equals(other.mFun);
+            return this.mFun.Equals(other.mFun);
         }
     }
 }
