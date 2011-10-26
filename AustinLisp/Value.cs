@@ -337,4 +337,53 @@ namespace AustinLisp
             return this.mFun.Equals(other.mFun);
         }
     }
+
+    class UserMacro : Value, IFunction
+    {
+        public readonly List mArgNames;
+        public readonly List mFun;
+
+        public UserMacro(List args, List fun)
+        {
+            this.mFun = fun;
+            this.mArgNames = args;
+        }
+
+        public override void ToString(StringBuilder sb)
+        {
+            sb.Append("#'userMacro" + this.GetHashCode());
+        }
+
+        public override Value Eval(Environment env)
+        {
+            return this;
+        }
+
+        public Value Execute(Environment env, List args)
+        {
+            var oldEnv = env;
+            env = new Environment(env);
+            var argNames = mArgNames;
+            while (argNames != List.Nil && args != List.Nil)
+            {
+                var name = ((Word)argNames.Val).Val;
+                env.Add(name, args.Val);
+
+                args = args.Next;
+                argNames = argNames.Next;
+            }
+            if (argNames != List.Nil || args != List.Nil)
+                throw new Exception("Wrong number of arguments.");
+
+            return mFun.Eval(env).Eval(env);
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as UserFunction;
+            if (other == null)
+                return false;
+            return this.mFun.Equals(other.mFun);
+        }
+    }
 }

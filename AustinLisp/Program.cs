@@ -129,6 +129,15 @@ namespace AustinLisp
                 env[name] = newFun;
                 return newFun;
             }));
+            top.Add("defmacro", new BuiltinFunction((env, args) =>
+            {
+                var name = ((Word)args.Val).Val;
+                var formalArgs = ((List)args.Next.Val);
+                var body = (List)args.Next.Next.Val;
+                var newFun = new UserMacro(formalArgs, body);
+                env[name] = newFun;
+                return newFun;
+            }));
             top.Add("exit", new BuiltinFunction((env, args) =>
             {
                 var exitArg = args.Val.Eval(env) as Int;
