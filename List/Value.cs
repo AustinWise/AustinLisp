@@ -147,7 +147,9 @@ namespace List
         {
             if (this == Nil)
                 return this;
-            var fun = (IFunction)env[((Word)Val).Val];
+            IFunction fun = Val as IFunction;
+            if (fun == null)
+                fun = (IFunction)env[((Word)Val).Val];
             return fun.Execute(env, Next);
         }
 
@@ -189,6 +191,18 @@ namespace List
                 return false;
             else
                 return this.Next.Equals(other.Next);
+        }
+
+        public List Map(Func<Value, Value> f)
+        {
+            return Map(this, f);
+        }
+
+        private static List Map(List l, Func<Value, Value> f)
+        {
+            if (l == Nil)
+                return Nil;
+            return new List(f(l.Val), Map(l.Next, f));
         }
     }
 
@@ -241,18 +255,13 @@ namespace List
 
     class UserFunction : Value, IFunction
     {
-        private readonly List<string> mArgNames;
-        private readonly List mFun;
+        public readonly List mArgNames;
+        public readonly List mFun;
 
         public UserFunction(List args, List fun)
         {
             this.mFun = fun;
-            mArgNames = new List<string>();
-            while (args != List.Nil)
-            {
-                mArgNames.Add(((Word)args.Val).Val);
-                args = args.Next;
-            }
+            this.mArgNames = args;
         }
 
         public override void ToString(StringBuilder sb)
@@ -267,20 +276,19 @@ namespace List
 
         public Value Execute(Environment env, List args)
         {
-            var argValues = new List<Value>(mArgNames.Count);
-            while (args != List.Nil)
-            {
-                argValues.Add(args.Val.Eval(env));
-                args = args.Next;
-            }
-            if (argValues.Count != mArgNames.Count)
-                throw new Exception("Wrong number of arguments.");
-
+            var oldEnv = env;
             env = new Environment(env);
-            for (int i = 0; i < mArgNames.Count; i++)
+            var argNames = mArgNames;
+            while (argNames != List.Nil && args != List.Nil)
             {
-                env.Add(mArgNames[i], argValues[i]);
+                var name = ((Word)argNames.Val).Val;
+                env.Add(name, args.Val.Eval(oldEnv));
+
+                args = args.Next;
+                argNames = argNames.Next;
             }
+            if (argNames != List.Nil || args != List.Nil)
+                throw new Exception("Wrong number of arguments.");
 
             var fun = mFun;
             Value ret = List.Nil;

@@ -6,7 +6,7 @@ using System.IO;
 
 namespace List
 {
-    class Program
+    static class Program
     {
         static void Main()
         {
@@ -17,7 +17,8 @@ namespace List
 
 
             var top = new Environment();
-            AddBuiltinFunction(top);
+            AddBuiltinFunctions(top);
+            AddExtraFunctions(top);
 
             Console.Write("> ");
             var scan = new Scanner(input);
@@ -81,9 +82,9 @@ namespace List
                 throw new Exception("Unknown token type.");
         }
 
-        static void AddBuiltinFunction(Environment top)
+        static void AddBuiltinFunctions(Environment top)
         {
-            //cond, atom, eq, and a notation for functions expressed as lists
+            //Missing: cond, atom
             top.Add("+", new BuiltinFunction((env, args) =>
             {
                 int accum = 0;
@@ -96,14 +97,7 @@ namespace List
             }));
             top.Add(new[] { "cons", "list" }, new BuiltinFunction((env, args) =>
             {
-                Func<List, List> mapList = null;
-                mapList = l =>
-                {
-                    if (l == List.Nil)
-                        return l;
-                    return new List(l.Val.Eval(env), mapList(l.Next));
-                };
-                return mapList(args);
+                return args.Map(v => v.Eval(env));
             }));
             top.Add("quote", new BuiltinFunction((env, args) =>
             {
@@ -142,7 +136,7 @@ namespace List
             {
                 var name = ((Word)args.Val).Val;
                 var formalArgs = ((List)args.Next.Val);
-                var body = args.Next.Next;
+                var body = args.Next.Next.Map(v => v.Eval(env));
                 var newFun = new UserFunction(formalArgs, body);
                 env[name] = newFun;
                 return newFun;
@@ -165,6 +159,26 @@ namespace List
                 else
                     return List.Nil;
             }));
+            top.Add("code", new BuiltinFunction((env, args) =>
+            {
+                var fun = args.Val.Eval(env) as UserFunction;
+                if (fun == null)
+                    throw new Exception("Could not find user function.");
+                return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
+            }));
+        }
+
+        static void Eval(this Environment env, string code)
+        {
+            var scan = new Scanner(new StringReader(code));
+            var val = Parse(scan);
+            val.Eval(env);
+        }
+
+        static void AddExtraFunctions(Environment top)
+        {
+            top.Eval("(defun second (l) '(car (cdr l)))");
+            top.Eval("(defun third (l) '(car (cdr (cdr l))))");
         }
     }
 }
