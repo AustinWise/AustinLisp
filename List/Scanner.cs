@@ -121,12 +121,13 @@ namespace List
 
         private IEnumerable<Tuple<TokenType, string>> GetTokens()
         {
-            EatWhitespace();
-
             int intChar;
             while ((intChar = mTr.Read()) != -1)
             {
                 char ch = (char)intChar;
+                if (char.IsWhiteSpace(ch))
+                    continue;
+
                 if (ch == '(')
                     yield return Tk(TokenType.LParen);
                 else if (ch == ')')
@@ -137,26 +138,11 @@ namespace List
                     yield return TkString();
                 else
                     yield return TkWord(ch);
-
-                EatWhitespace();
             }
 
             while (true)
             {
                 yield return Tk(TokenType.EOF);
-            }
-        }
-
-        private void EatWhitespace()
-        {
-            int intChar;
-            while ((intChar = mTr.Peek()) != -1)
-            {
-                char ch = (char)intChar;
-                if (char.IsWhiteSpace(ch))
-                    mTr.Read();
-                else
-                    return;
             }
         }
     }
