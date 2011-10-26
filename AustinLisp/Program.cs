@@ -83,9 +83,13 @@ namespace AustinLisp
                 }
                 return new Int(accum);
             }));
-            top.Add(new[] { "cons", "list" }, new BuiltinFunction((env, args) =>
+            top.Add("list", new BuiltinFunction((env, args) =>
             {
                 return args.Map(v => v.Eval(env));
+            }));
+            top.Add("cons", new BuiltinFunction((env, args) =>
+            {
+                return new List(args.Val.Eval(env), (List)args.Next.Val.Eval(env));
             }));
             top.Add("quote", new BuiltinFunction((env, args) =>
             {
@@ -132,7 +136,7 @@ namespace AustinLisp
                 var formalArgs = ((List)args.Next.Val);
                 var body = args.Next.Next.Map(v => v.Eval(env));
                 var newFun = new UserFunction(formalArgs, body);
-                env[name] = newFun;
+                top[name] = newFun;
                 return newFun;
             }));
             top.Add("defmacro", new BuiltinFunction((env, args) =>
@@ -141,7 +145,7 @@ namespace AustinLisp
                 var formalArgs = ((List)args.Next.Val);
                 var body = (List)args.Next.Next.Val;
                 var newFun = new UserMacro(formalArgs, body);
-                env[name] = newFun;
+                top[name] = newFun;
                 return newFun;
             }));
             top.Add("exit", new BuiltinFunction((env, args) =>
@@ -193,6 +197,29 @@ namespace AustinLisp
                 }
                 return l;
             }));
+            top.Add("read", new BuiltinFunction((env, args) =>
+            {
+                var fileName = ((String)args.Val.Eval(env)).Val;
+                var values = new Stack<Value>();
+                using (var file = new StreamReader(fileName))
+                {
+                    var scan = new Scanner(file);
+                    while (scan.Peek().Item1 != TokenType.EOF)
+                    {
+                        values.Push(Parse(scan));
+                    }
+                }
+                var ret = List.Nil;
+                foreach (var v in values)
+                {
+                    ret = new List(v, ret);
+                }
+                return ret;
+            }));
+            top.Add("eval", new BuiltinFunction((env, args) =>
+            {
+                return args.Val.Eval(env).Eval(env);
+            }));
         }
 
         static void Eval(this Environment env, string code)
@@ -204,8 +231,9 @@ namespace AustinLisp
 
         static void AddExtraFunctions(Environment top)
         {
-            top.Eval("(defun second (l) '(car (cdr l)))");
-            top.Eval("(defun third (l) '(car (cdr (cdr l))))");
+            top.Eval("(defun map (fn l) '(if (eq l nil) () (cons (fn (car l)) (map fn (cdr l)))))");
+            top.Eval("(defun load (file) '(map eval (read file)))");
+            top.Eval("(load \"ExtraFunctions.lisp\")");
         }
     }
 }
