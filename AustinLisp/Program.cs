@@ -42,6 +42,8 @@ namespace AustinLisp
                 return True.T;
             else if (tk.Item1 == TokenType.Number)
                 return new Int(int.Parse(tk.Item2));
+            else if (tk.Item1 == TokenType.String)
+                return new String(tk.Item2);
             else if (tk.Item1 == TokenType.LParen)
             {
                 var cons = new Stack<Value>();

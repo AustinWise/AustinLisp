@@ -93,11 +93,6 @@ namespace AustinLisp
             this.Val = v;
         }
 
-        public override string ToString()
-        {
-            return Val;
-        }
-
         public override void ToString(StringBuilder sb)
         {
             sb.Append(Val);
@@ -111,6 +106,40 @@ namespace AustinLisp
         public override bool Equals(object obj)
         {
             var other = obj as Word;
+            if (other == null)
+                return false;
+            return this.Val == other.Val;
+        }
+
+        public override int GetHashCode()
+        {
+            return Val.GetHashCode();
+        }
+    }
+
+    class String : Value
+    {
+        public readonly string Val;
+        public String(string v)
+        {
+            this.Val = v;
+        }
+
+        public override void ToString(StringBuilder sb)
+        {
+            sb.Append('"');
+            sb.Append(Val);
+            sb.Append('"');
+        }
+
+        public override Value Eval(Environment env)
+        {
+            return this;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as String;
             if (other == null)
                 return false;
             return this.Val == other.Val;
