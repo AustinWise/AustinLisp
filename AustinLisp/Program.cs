@@ -103,7 +103,13 @@ namespace AustinLisp
             }));
             top.Add("print", new BuiltinFunction((env, args) =>
             {
-                Console.Write(args.Val.Eval(env));
+                Value v = args.Val.Eval(env);
+                string str;
+                if (v is String)
+                    str = ((String)v).Val;
+                else
+                    str = v.ToString();
+                Console.WriteLine(str);
                 return List.Nil;
             }));
             top.Add("if", new BuiltinFunction((env, args) =>
@@ -158,10 +164,34 @@ namespace AustinLisp
             }));
             top.Add("code", new BuiltinFunction((env, args) =>
             {
-                var fun = args.Val.Eval(env) as UserFunction;
-                if (fun == null)
+                var val = args.Val.Eval(env);
+                if (val is UserFunction)
+                {
+                    var fun = args.Val.Eval(env) as UserFunction;
+                    return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
+                }
+                else if (val is UserMacro)
+                {
+                    var fun = args.Val.Eval(env) as UserMacro;
+                    return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
+                }
+                else
                     throw new Exception("Could not find user function.");
-                return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
+            }));
+            top.Add("reverse", new BuiltinFunction((env, args) =>
+            {
+                var l = (List)args.Val.Eval(env);
+                var ret = new List<Value>();
+                while (l != List.Nil)
+                {
+                    ret.Add(l.Val);
+                    l = l.Next;
+                }
+                foreach (var v in ret)
+                {
+                    l = new List(v, l);
+                }
+                return l;
             }));
         }
 
