@@ -20,6 +20,23 @@ namespace AustinLisp
             this.mParent = parent;
         }
 
+        public bool ContainsKey(string key)
+        {
+            var l = mValues;
+            while (l != List.Nil)
+            {
+                List kvp = l.Val as List;
+                string k = (kvp.Val as Word).Val;
+                if (k == key)
+                    return true;
+                l = l.Next;
+            }
+            if (mParent == null)
+                return false;
+            else
+                return mParent.ContainsKey(key);
+        }
+
         public Value Get(string key)
         {
             List l = this.mValues;
@@ -39,6 +56,8 @@ namespace AustinLisp
 
         public void Add(string key, Value val)
         {
+            if (ContainsKey(key))
+                throw new Exception("'" + key + "' already defined.");
             mValues = new List(new List(new Word(key), new List(val, List.Nil)), mValues);
         }
 
@@ -58,7 +77,7 @@ namespace AustinLisp
             }
             set
             {
-                Add(key, value);
+                mValues = new List(new List(new Word(key), new List(value, List.Nil)), mValues);
             }
         }
 

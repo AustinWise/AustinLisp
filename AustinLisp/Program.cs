@@ -130,6 +130,13 @@ namespace AustinLisp
                 else
                     return List.Nil;
             }));
+            top.Add("lambda", new BuiltinFunction((env, args) =>
+            {
+                var formalArgs = ((List)args.Val);
+                var body = args.Next.Map(v => v.Eval(env));
+                var newFun = new UserFunction(formalArgs, body);
+                return newFun;
+            }));
             top.Add("defun", new BuiltinFunction((env, args) =>
             {
                 var name = ((Word)args.Val).Val;

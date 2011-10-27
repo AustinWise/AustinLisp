@@ -311,7 +311,7 @@ namespace AustinLisp
             while (argNames != List.Nil && args != List.Nil)
             {
                 var name = ((Word)argNames.Val).Val;
-                env.Add(name, args.Val.Eval(oldEnv));
+                env[name] = args.Val.Eval(oldEnv);
 
                 args = args.Next;
                 argNames = argNames.Next;
@@ -367,7 +367,7 @@ namespace AustinLisp
             while (argNames != List.Nil && args != List.Nil)
             {
                 var name = ((Word)argNames.Val).Val;
-                env.Add(name, args.Val);
+                env[name] = args.Val;
 
                 args = args.Next;
                 argNames = argNames.Next;
