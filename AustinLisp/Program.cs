@@ -152,6 +152,10 @@ namespace AustinLisp
                     throw new Exception("Could not find user function.");
                 return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
             }));
+            top.Add("env", new BuiltinFunction((env, args) =>
+            {
+                return env.AsList();
+            }));
         }
 
         static void Eval(this Environment env, string code)

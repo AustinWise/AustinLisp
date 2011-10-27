@@ -8,7 +8,7 @@ namespace AustinLisp
     class Environment
     {
         private readonly Environment mParent = null;
-        private readonly Dictionary<string, Value> mDic = new Dictionary<string, Value>();
+        private List mValues = List.Nil;
 
         public Environment()
             : this(null)
@@ -22,8 +22,15 @@ namespace AustinLisp
 
         public Value Get(string key)
         {
-            if (mDic.ContainsKey(key))
-                return mDic[key];
+            List l = this.mValues;
+            while (l != List.Nil)
+            {
+                List kvp = l.Val as List;
+                string k = (kvp.Val as Word).Val;
+                if (k == key)
+                    return kvp.Next.Val;
+                l = l.Next;
+            }
             if (mParent == null)
                 throw new KeyNotFoundException("Could not find key '" + key + "'.");
             else
@@ -32,14 +39,14 @@ namespace AustinLisp
 
         public void Add(string key, Value val)
         {
-            mDic.Add(key, val);
+            mValues = new List(new List(new Word(key), new List(val, List.Nil)), mValues);
         }
 
         public void Add(string[] keys, Value val)
         {
             foreach (var k in keys)
             {
-                mDic.Add(k, val);
+                Add(k, val);
             }
         }
 
@@ -51,8 +58,16 @@ namespace AustinLisp
             }
             set
             {
-                mDic[key] = value;
+                Add(key, value);
             }
+        }
+
+        public List AsList()
+        {
+            List parentList = List.Nil;
+            if (mParent != null)
+                parentList = mParent.AsList();
+            return new List(mValues, parentList);
         }
     }
 }

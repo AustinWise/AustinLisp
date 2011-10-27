@@ -38,7 +38,7 @@ namespace AustinLisp
 
         public override void ToString(StringBuilder sb)
         {
-            sb.Append("#'bultinFunc");
+            sb.Append("#'builtinFunc");
             sb.Append(GetHashCode());
         }
 
