@@ -95,7 +95,7 @@ namespace AustinLisp
             if (intChar == -1)
                 throw new Exception("EOF reached with no end of string literal.");
 
-            return new Tuple<TokenType, string>(TokenType.Word, sb.ToString());
+            return new Tuple<TokenType, string>(TokenType.String, sb.ToString());
         }
 
         private IEnumerable<Tuple<TokenType, string>> GetTokens2()

@@ -93,11 +93,6 @@ namespace AustinLisp
             this.Val = v;
         }
 
-        public override string ToString()
-        {
-            return Val;
-        }
-
         public override void ToString(StringBuilder sb)
         {
             sb.Append(Val);
@@ -111,6 +106,40 @@ namespace AustinLisp
         public override bool Equals(object obj)
         {
             var other = obj as Word;
+            if (other == null)
+                return false;
+            return this.Val == other.Val;
+        }
+
+        public override int GetHashCode()
+        {
+            return Val.GetHashCode();
+        }
+    }
+
+    class String : Value
+    {
+        public readonly string Val;
+        public String(string v)
+        {
+            this.Val = v;
+        }
+
+        public override void ToString(StringBuilder sb)
+        {
+            sb.Append('"');
+            sb.Append(Val);
+            sb.Append('"');
+        }
+
+        public override Value Eval(Environment env)
+        {
+            return this;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as String;
             if (other == null)
                 return false;
             return this.Val == other.Val;
@@ -298,6 +327,55 @@ namespace AustinLisp
                 fun = fun.Next;
             }
             return ret;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as UserFunction;
+            if (other == null)
+                return false;
+            return this.mFun.Equals(other.mFun);
+        }
+    }
+
+    class UserMacro : Value, IFunction
+    {
+        public readonly List mArgNames;
+        public readonly List mFun;
+
+        public UserMacro(List args, List fun)
+        {
+            this.mFun = fun;
+            this.mArgNames = args;
+        }
+
+        public override void ToString(StringBuilder sb)
+        {
+            sb.Append("#'userMacro" + this.GetHashCode());
+        }
+
+        public override Value Eval(Environment env)
+        {
+            return this;
+        }
+
+        public Value Execute(Environment env, List args)
+        {
+            var oldEnv = env;
+            env = new Environment(env);
+            var argNames = mArgNames;
+            while (argNames != List.Nil && args != List.Nil)
+            {
+                var name = ((Word)argNames.Val).Val;
+                env.Add(name, args.Val);
+
+                args = args.Next;
+                argNames = argNames.Next;
+            }
+            if (argNames != List.Nil || args != List.Nil)
+                throw new Exception("Wrong number of arguments.");
+
+            return mFun.Eval(env).Eval(env);
         }
 
         public override bool Equals(object obj)

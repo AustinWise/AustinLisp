@@ -42,6 +42,8 @@ namespace AustinLisp
                 return True.T;
             else if (tk.Item1 == TokenType.Number)
                 return new Int(int.Parse(tk.Item2));
+            else if (tk.Item1 == TokenType.String)
+                return new String(tk.Item2);
             else if (tk.Item1 == TokenType.LParen)
             {
                 var cons = new Stack<Value>();
@@ -81,9 +83,13 @@ namespace AustinLisp
                 }
                 return new Int(accum);
             }));
-            top.Add(new[] { "cons", "list" }, new BuiltinFunction((env, args) =>
+            top.Add("list", new BuiltinFunction((env, args) =>
             {
                 return args.Map(v => v.Eval(env));
+            }));
+            top.Add("cons", new BuiltinFunction((env, args) =>
+            {
+                return new List(args.Val.Eval(env), (List)args.Next.Val.Eval(env));
             }));
             top.Add("quote", new BuiltinFunction((env, args) =>
             {
@@ -101,7 +107,13 @@ namespace AustinLisp
             }));
             top.Add("print", new BuiltinFunction((env, args) =>
             {
-                Console.Write(args.Val.Eval(env));
+                Value v = args.Val.Eval(env);
+                string str;
+                if (v is String)
+                    str = ((String)v).Val;
+                else
+                    str = v.ToString();
+                Console.WriteLine(str);
                 return List.Nil;
             }));
             top.Add("if", new BuiltinFunction((env, args) =>
@@ -124,7 +136,16 @@ namespace AustinLisp
                 var formalArgs = ((List)args.Next.Val);
                 var body = args.Next.Next.Map(v => v.Eval(env));
                 var newFun = new UserFunction(formalArgs, body);
-                env[name] = newFun;
+                top[name] = newFun;
+                return newFun;
+            }));
+            top.Add("defmacro", new BuiltinFunction((env, args) =>
+            {
+                var name = ((Word)args.Val).Val;
+                var formalArgs = ((List)args.Next.Val);
+                var body = (List)args.Next.Next.Val;
+                var newFun = new UserMacro(formalArgs, body);
+                top[name] = newFun;
                 return newFun;
             }));
             top.Add("exit", new BuiltinFunction((env, args) =>
@@ -147,10 +168,57 @@ namespace AustinLisp
             }));
             top.Add("code", new BuiltinFunction((env, args) =>
             {
-                var fun = args.Val.Eval(env) as UserFunction;
-                if (fun == null)
+                var val = args.Val.Eval(env);
+                if (val is UserFunction)
+                {
+                    var fun = args.Val.Eval(env) as UserFunction;
+                    return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
+                }
+                else if (val is UserMacro)
+                {
+                    var fun = args.Val.Eval(env) as UserMacro;
+                    return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
+                }
+                else
                     throw new Exception("Could not find user function.");
-                return new List(fun.mArgNames, new List(fun.mFun, List.Nil));
+            }));
+            top.Add("reverse", new BuiltinFunction((env, args) =>
+            {
+                var l = (List)args.Val.Eval(env);
+                var ret = new List<Value>();
+                while (l != List.Nil)
+                {
+                    ret.Add(l.Val);
+                    l = l.Next;
+                }
+                foreach (var v in ret)
+                {
+                    l = new List(v, l);
+                }
+                return l;
+            }));
+            top.Add("read", new BuiltinFunction((env, args) =>
+            {
+                var fileName = ((String)args.Val.Eval(env)).Val;
+                var values = new Stack<Value>();
+                using (var file = new StreamReader(fileName))
+                {
+                    var scan = new Scanner(file);
+                    while (scan.Peek().Item1 != TokenType.EOF)
+                    {
+                        values.Push(Parse(scan));
+                    }
+                }
+                var ret = List.Nil;
+                foreach (var v in values)
+                {
+                    ret = new List(v, ret);
+                }
+                return ret;
+            }));
+            top.Add("eval", new BuiltinFunction((env, args) =>
+            {
+                return args.Val.Eval(env).Eval(env);
             }));
             top.Add("env", new BuiltinFunction((env, args) =>
             {
@@ -167,8 +235,9 @@ namespace AustinLisp
 
         static void AddExtraFunctions(Environment top)
         {
-            top.Eval("(defun second (l) '(car (cdr l)))");
-            top.Eval("(defun third (l) '(car (cdr (cdr l))))");
+            top.Eval("(defun map (fn l) '(if (eq l nil) () (cons (fn (car l)) (map fn (cdr l)))))");
+            top.Eval("(defun load (file) '(map eval (read file)))");
+            top.Eval("(load \"ExtraFunctions.lisp\")");
         }
     }
 }
