@@ -176,9 +176,9 @@ namespace AustinLisp
         {
             if (this == Nil)
                 return this;
-            IFunction fun = Val as IFunction;
+            IFunction fun = Val.Eval(env) as IFunction;
             if (fun == null)
-                fun = (IFunction)env[((Word)Val).Val];
+                throw new Exception("'" + Val.ToString() + "' does not evaluate to a function.");
             return fun.Execute(env, Next);
         }
 
