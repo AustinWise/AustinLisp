@@ -216,6 +216,13 @@ namespace AustinLisp
             {
                 return env.AsList();
             }));
+            top.Add("let", new BuiltinFunction((env, args) =>
+            {
+                var name = (Word)args.Val;
+                var val = args.Next.Val.Eval(env);
+                top[name.Val] = val;
+                return val;
+            }));
         }
 
         static void Eval(this Environment env, string code)
@@ -227,7 +234,7 @@ namespace AustinLisp
 
         static void AddExtraFunctions(Environment top)
         {
-            top.Eval("(defun map (fn l) '(if (eq l nil) () (cons (fn (car l)) (map fn (cdr l)))))");
+            top.Eval("(defun map (fn l) '(if l (cons (fn (car l)) (map fn (cdr l))) () ))");
             top.Eval("(defun load (file) '(map eval (read file)))");
             top.Eval("(load \"ExtraFunctions.lisp\")");
         }
