@@ -189,21 +189,6 @@ namespace AustinLisp
                 else
                     throw new Exception("Could not find user function.");
             }));
-            top.Add("reverse", new BuiltinFunction((env, args) =>
-            {
-                var l = (List)args.Val.Eval(env);
-                var ret = new List<Value>();
-                while (l != List.Nil)
-                {
-                    ret.Add(l.Val);
-                    l = l.Next;
-                }
-                foreach (var v in ret)
-                {
-                    l = new List(v, l);
-                }
-                return l;
-            }));
             top.Add("read", new BuiltinFunction((env, args) =>
             {
                 var fileName = ((String)args.Val.Eval(env)).Val;
