@@ -214,6 +214,13 @@ namespace AustinLisp
                 top[name.Val] = val;
                 return val;
             }));
+            top.Add("save", new BuiltinFunction((env, args) =>
+            {
+                var fileName = ((String)args.Val.Eval(env)).Val;
+                var stuff = args.Next.Val.Eval(env);
+                File.WriteAllText(fileName, stuff.ToString());
+                return stuff;
+            }));
         }
 
         static void Eval(this Environment env, string code)
