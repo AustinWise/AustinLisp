@@ -137,15 +137,6 @@ namespace AustinLisp
                 var newFun = new UserFunction(formalArgs, body);
                 return newFun;
             }));
-            top.Add("defun", new BuiltinFunction((env, args) =>
-            {
-                var name = ((Word)args.Val).Val;
-                var formalArgs = ((List)args.Next.Val);
-                var body = args.Next.Next.Map(v => v.Eval(env));
-                var newFun = new UserFunction(formalArgs, body);
-                top[name] = newFun;
-                return newFun;
-            }));
             top.Add("defmacro", new BuiltinFunction((env, args) =>
             {
                 var name = ((Word)args.Val).Val;
@@ -234,6 +225,7 @@ namespace AustinLisp
 
         static void AddExtraFunctions(Environment top)
         {
+            top.Eval("(defmacro defun (name args l) (list let name (list lambda args l)))");
             top.Eval("(defun map (fn l) '(if l (cons (fn (car l)) (map fn (cdr l))) () ))");
             top.Eval("(defun load (file) '(map eval (read file)))");
             top.Eval("(load \"ExtraFunctions.lisp\")");
