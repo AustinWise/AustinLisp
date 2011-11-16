@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Reflection;
 
 namespace AustinLisp
 {
@@ -66,6 +67,8 @@ namespace AustinLisp
             }
             else if (tk.Item1 == TokenType.Quote)
                 return new Quote(Parse(scan));
+            else if (tk.Item1 == TokenType.RParen)
+                throw new Exception("Unexpected RParen.");
             else
                 throw new Exception("Unknown token type.");
         }
@@ -221,7 +224,33 @@ namespace AustinLisp
                 File.WriteAllText(fileName, stuff.ToString());
                 return stuff;
             }));
+            top.Add("new", new BuiltinFunction((env, args) =>
+            {
+                string className;
+                var nameValue = args.Val.Eval(env);
+                if (nameValue is String)
+                    className = ((String)nameValue).Val;
+                else if (nameValue is Word)
+                    className = ((Word)nameValue).Val;
+                else
+                    throw new Exception(nameValue.ToDotNetValue() + " is not a valid class name.");
+                Type type = Type.GetType(className);
+                if (type == null)
+                {
+                    foreach (var a in SearchAssemblies)
+                    {
+                        type = a.GetType(className);
+                        if (type != null)
+                            break;
+                    }
+                }
+                if (type == null)
+                    throw new Exception("Could not find type '" + className + "'.");
+                return new DotNetValue(Activator.CreateInstance(type));
+            }));
         }
+
+        private static readonly Assembly[] SearchAssemblies = new Assembly[] { typeof(string).Assembly, typeof(Uri).Assembly };
 
         static void Eval(this Environment env, string code)
         {

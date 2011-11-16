@@ -22,6 +22,8 @@ namespace AustinLisp
 
         public abstract Value Eval(Environment env);
 
+        public abstract object ToDotNetValue();
+
         public bool IsTrue()
         {
             return this != List.Nil;
@@ -51,6 +53,11 @@ namespace AustinLisp
         {
             return Fun(env, args);
         }
+
+        public override object ToDotNetValue()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class Int : Value
@@ -69,6 +76,11 @@ namespace AustinLisp
         public override Value Eval(Environment env)
         {
             return this;
+        }
+
+        public override object ToDotNetValue()
+        {
+            return Val;
         }
 
         public override bool Equals(object obj)
@@ -103,6 +115,11 @@ namespace AustinLisp
             return env[Val];
         }
 
+        public override object ToDotNetValue()
+        {
+            throw new NotImplementedException();
+        }
+
         public override bool Equals(object obj)
         {
             var other = obj as Word;
@@ -135,6 +152,11 @@ namespace AustinLisp
         public override Value Eval(Environment env)
         {
             return this;
+        }
+
+        public override object ToDotNetValue()
+        {
+            return Val;
         }
 
         public override bool Equals(object obj)
@@ -180,6 +202,13 @@ namespace AustinLisp
             if (fun == null)
                 throw new Exception("'" + Val.ToString() + "' does not evaluate to a function.");
             return fun.Execute(env, Next);
+        }
+
+        public override object ToDotNetValue()
+        {
+            if (this == Nil)
+                return false;
+            throw new NotImplementedException();
         }
 
         private static void ToStringInner(List l, StringBuilder sb)
@@ -255,6 +284,11 @@ namespace AustinLisp
             return Val;
         }
 
+        public override object ToDotNetValue()
+        {
+            throw new NotImplementedException();
+        }
+
         public override bool Equals(object obj)
         {
             var other = obj as Quote;
@@ -274,6 +308,11 @@ namespace AustinLisp
         public override void ToString(StringBuilder sb)
         {
             sb.Append("t");
+        }
+
+        public override object ToDotNetValue()
+        {
+            return true;
         }
 
         public override Value Eval(Environment env)
@@ -301,6 +340,11 @@ namespace AustinLisp
         public override Value Eval(Environment env)
         {
             return this;
+        }
+
+        public override object ToDotNetValue()
+        {
+            throw new NotImplementedException();
         }
 
         public Value Execute(Environment env, List args)
@@ -359,6 +403,11 @@ namespace AustinLisp
             return this;
         }
 
+        public override object ToDotNetValue()
+        {
+            throw new NotImplementedException();
+        }
+
         public Value Execute(Environment env, List args)
         {
             var oldEnv = env;
@@ -384,6 +433,67 @@ namespace AustinLisp
             if (other == null)
                 return false;
             return this.mFun.Equals(other.mFun);
+        }
+    }
+    class DotNetValue : Value, IFunction
+    {
+        private object mObj;
+        public DotNetValue(object obj)
+        {
+            if (obj == null)
+                throw new ArgumentNullException();
+            this.mObj = obj;
+        }
+
+        public override void ToString(StringBuilder sb)
+        {
+            sb.Append("#'");
+            sb.Append(mObj.GetType().FullName);
+            sb.Append(mObj.GetHashCode());
+        }
+
+        public override Value Eval(Environment env)
+        {
+            return this;
+        }
+
+        public override object ToDotNetValue()
+        {
+            return mObj;
+        }
+
+        public Value Execute(Environment env, List args)
+        {
+            var methodName = ((Word)args.Val.Eval(env)).Val;
+            var arguments = new List<object>();
+            while ((args = args.Next) != List.Nil)
+            {
+                arguments.Add(args.Val.Eval(env).ToDotNetValue());
+            }
+            var argTypes = arguments.Select(o => o.GetType()).ToArray();
+            var meth = mObj.GetType().GetMethod(methodName, argTypes);
+            var ret = meth.Invoke(mObj, arguments.ToArray());
+            if (ret == null)
+                return List.Nil;
+            if (ret is string)
+                return new String(ret.ToString());
+            else if (ret is int)
+                return new Int((int)ret);
+            else
+                return new DotNetValue(ret);
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as DotNetValue;
+            if (other == null)
+                return false;
+            return this.mObj.Equals(other.mObj);
+        }
+
+        public override int GetHashCode()
+        {
+            return mObj.GetHashCode();
         }
     }
 }
